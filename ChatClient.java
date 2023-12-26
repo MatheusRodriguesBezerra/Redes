@@ -1,12 +1,11 @@
 import java.io.*;
 import java.net.*;
-import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
 
-public class TCPClient {
+public class ChatClient {
    // Variáveis relacionadas com a interface gráfica --- * NÃO MODIFICAR *
    JFrame frame = new JFrame("Chat Client");
    private JTextField chatBox = new JTextField();
@@ -16,7 +15,8 @@ public class TCPClient {
    // Se for necessário adicionar variáveis ao objecto ChatClient, devem
    // ser colocadas aqui
 
-
+   String server;
+   int port;
 
     
    // Método a usar para acrescentar uma string à caixa de texto
@@ -27,7 +27,7 @@ public class TCPClient {
 
     
    // Construtor
-   public TCPClient(String server, int port) throws IOException {
+   public ChatClient(String server, int port) throws IOException {
 
       // Inicialização da interface gráfica --- * NÃO MODIFICAR *
       frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -62,26 +62,47 @@ public class TCPClient {
          // Se for necessário adicionar código de inicialização ao
          // construtor, deve ser colocado aqui
 
+         this.server = server;
+         this.port = port;
+
    }
 
 
    // Método invocado sempre que o utilizador insere uma mensagem
    // na caixa de entrada
    public void newMessage(String message) throws IOException {
-      // PREENCHER AQUI com código que envia a mensagem ao servidor
+      // Cria uma conexão TCP com o servidor
+      Socket socket = new Socket(server, port);
+      PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+      out.println(message);
+      socket.close();
    }
 
     
    // Método principal do objecto
    public void run() throws IOException {
-      // PREENCHER AQUI
+      // Cria uma conexão TCP com o servidor
+      Socket socket = new Socket(server, port);
+
+      // Cria um fluxo de entrada para receber mensagens do servidor
+      BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+      // Cria um ciclo infinito que recebe mensagens do servidor
+      while (true) {
+         // Lê a próxima mensagem do servidor
+         String message = in.readLine();
+
+         // Imprime a mensagem na caixa de texto
+         printMessage(message);
+      }
+      
    }
     
 
    // Instancia o ChatClient e arranca-o invocando o seu método run()
    // * NÃO MODIFICAR *
    public static void main(String[] args) throws IOException {
-      TCPClient client = new TCPClient(args[0], Integer.parseInt(args[1]));
+      ChatClient client = new ChatClient(args[0], Integer.parseInt(args[1]));
       client.run();
    }
 }
