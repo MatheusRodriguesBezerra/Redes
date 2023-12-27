@@ -1,3 +1,8 @@
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.Socket;
+
 public class Data {
     private ListUsers users;
 
@@ -5,107 +10,148 @@ public class Data {
         users = new ListUsers();
     }
 
-    public String event(String command, String message, String userName){
-        NodeUser user = getUserByName(userName);
-
-        if(user.getState() =="init" && command == "/nick" && users.alreadyExists(message)){
+    public String event(String message, String server, int port) throws IOException{
+        NodeUser user = getUserByServer(server, port);
+    
+        String command;
+        String[] arrOfMsg = message.split(" ", 2);
+    
+        if ("/nick".equals(arrOfMsg[0])) {
+            command = "/nick";
+        } else if ("/join".equals(arrOfMsg[0])) {
+            command = "/join";
+        } else if ("/leave".equals(arrOfMsg[0])) {
+            command = "/leave";
+        } else if ("/bye".equals(arrOfMsg[0])) {
+            command = "/bye";
+        } else {
+            command = message;
+        }
+    
+        if ("init".equals(user.getState()) && "/nick".equals(command) && users.alreadyExists(message)){
             return "ERROR\n";
         }
-
-        if(user.getState() == "init" && command == "/nick" && !users.alreadyExists(message)){
-            user.setState("outside");
+    
+        if ("init".equals(user.getState()) && "/nick".equals(command)){
+            try {
+                message("OK\n", user);
+                user.setState("outside");
+            } catch (IOException e) {
+                // Trate a exceção aqui, se necessário
+                e.printStackTrace();
+            }
             return "OK\n";
         }
-
-        if(user.getState() == "outside" && command == "/join"){
-            // eviar para os outros utilizadores da sala JOINED nome
+    
+        if ("outside".equals(user.getState()) && "/join".equals(command)){
+            // Enviar para os outros utilizadores da sala JOINED nome
             user.setRoom(message);
             user.setState("inside");
             return "OK\nJOINED " + user.getName() + "\n";
         }
-
-        if(user.getState() == "outside" && command == "/nick" && users.alreadyExists(message)){
+    
+        if ("outside".equals(user.getState()) && "/nick".equals(command) && users.alreadyExists(message)){
             return "ERROR\n";
         }
-
-        if(user.getState() == "outside" && command == "/nick" && !users.alreadyExists(message)){
-            user.setName(userName);
+    
+        if ("outside".equals(user.getState()) && "/nick".equals(command) && !users.alreadyExists(message)){
+            user.setName(user.getName());
             return "OK\n";
         }
-
-        if(user.getState() == "inside" && command == "message"){
-            // enviar para todos os utilizadopres da sala MESSAGE nome mensagem
+    
+        if ("inside".equals(user.getState()) && "message".equals(command)){
+            // Enviar para todos os utilizadores da sala MESSAGE nome mensagem
             return "MESSAGE " + user.getName() + " " + message + "\n"; 
         }
-
-        if(user.getState() == "inside" && command == "/nick" && users.alreadyExists(message)){
+    
+        if ("inside".equals(user.getState()) && "/nick".equals(command) && users.alreadyExists(message)){
             return "ERROR\n";
         }
-
-        if(user.getState() == "inside" && command == "/nick" && !users.alreadyExists(message)){
-            // enviar p o utilizador OK
-            // enviar para os outros utilizadores da sala NEWNICK nome_antigo nome
+    
+        if ("inside".equals(user.getState()) && "/nick".equals(command) && !users.alreadyExists(message)){
+            // Enviar para o utilizador OK
+            // Enviar para os outros utilizadores da sala NEWNICK nome_antigo nome
             user.setName(message);
-            return "NEWNICK " + userName + " " + message + " \n";
+            return "NEWNICK " + user.getName() + " " + message + " \n";
         }
-
-        if(user.getState() == "inside" && command == "/join"){
-            // enviar p o utilizador OK
-            // enviar para os usuarios da sala atual LEFT nome
+    
+        if ("inside".equals(user.getState()) && "/join".equals(command)){
+            // Enviar para o utilizador OK
+            // Enviar para os usuários da sala atual LEFT nome
             user.setRoom(message);
-            // enviar para os usuarios da nova sala JOINED nome
+            // Enviar para os usuários da nova sala JOINED nome
             user.setState("inside");
             return "OK\nJOINED " + user.getName() + "\n";
         }
-
-        if(user.getState() == "inside" && command == "/leave"){
-            // enviar p o utilizador OK
-            // enviar para os outros utilizadores da sala LEFT nome
+    
+        if ("inside".equals(user.getState()) && "/leave".equals(command)){
+            // Enviar para o utilizador OK
+            // Enviar para os outros utilizadores da sala LEFT nome
             user.setRoom(null);
             user.setState("outside"); 
-            return "OK\nLEFT " + userName;
+            return "OK\nLEFT " + user.getName();
         }
-
-        if(user.getState() == "inside" && command == "/bye"){
-            // enviar p o utilizador BYE
-            // enviar para os outros utilizadores da sala LEFT nome
-            users.remove(userName);
-            return "BYE\nLEFT " + userName;
+    
+        if ("inside".equals(user.getState()) && "/bye".equals(command)){
+            // Enviar para o utilizador BYE
+            // Enviar para os outros utilizadores da sala LEFT nome
+            users.remove(user.getName());
+            return "BYE\nLEFT " + user.getName();
         }
-
-        if(user.getState() == "inside"){
-            // enviar para os outros utilizadores da sala LEFT nome
-            users.remove(userName);
+    
+        if ("/priv".equals(command)){
+            String[] msg = message.split(" ", 2);
+            if (!users.contains(msg[0])){
+                return "ERROR\n";
+            }
+    
+            return "MESSAGE " + user.getName() + " " + msg[1] + "\n";
         }
-
-        if(user.getState() != "inside" && command == "/bye"){
-            // enviar p o utilizador BYE
-            users.remove(userName);
+    
+        if ("inside".equals(user.getState())){
+            // Enviar para os outros utilizadores da sala LEFT nome
+            users.remove(user.getName());
         }
-
-        if(user.getState() != "inside" && command == "message"){
+    
+        if (!"inside".equals(user.getState()) && "/bye".equals(command)){
+            // Enviar para o utilizador BYE
+            users.remove(user.getName());
+        }
+    
+        if (!"inside".equals(user.getState()) && "message".equals(command)){
             // ERROR
         }
-
-        if(user.getState() != "inside"){
-            users.remove(userName);
+    
+        if (!"inside".equals(user.getState())){
+            return "ERROR";
         }
-
+    
         // ERROR
         return "";
     }
+    
 
-    public NodeUser getUserByName(String name){
-        if(!users.contains(name)){
-            NodeUser user = new NodeUser(name);
+    public NodeUser getUserByServer(String server, int port){
+        if(!users.contains(server, port)){
+            NodeUser user = new NodeUser(server, port);
             users.add(user);
             return user;
         }
 
         NodeUser cur = users.getRoot();
-        while (!cur.getName().equals(name)) {
+        while (!cur.getServer().equals(server) && (cur.getPort() != port)) {
             cur =cur.getNext();
         }
         return cur;
+    }
+
+    public void message(String message, NodeUser user) throws IOException {
+        // // Cria uma conexão TCP com o servidor
+        // System.out.println(user.getServer());
+        // System.out.println(user.getPort());
+        Socket socket = new Socket("localhost", user.getPort());
+        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+        out.println(message);
+        socket.close();
     }
 }

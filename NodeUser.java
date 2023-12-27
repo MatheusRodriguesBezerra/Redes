@@ -3,17 +3,8 @@ public class NodeUser {
     private int port;
     private NodeUser next;
 
-    NodeUser(String name){
-        this.name = name;
-        this.server = null;
-        this.port = 0;
-        this.state = "init";
-        this.next = null;
-        this.room = null;
-    }
-
-    NodeUser(String name, String server, int port){
-        this.name = name;
+    NodeUser(String server, int port){
+        this.name = null;
         this.server = server;
         this.port = port;
         this.state = "init";

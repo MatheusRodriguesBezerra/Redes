@@ -34,19 +34,20 @@ public class ListUsers {
     }
 
     // verifica se tal usuário já existe
-    public boolean alreadyExists(String userName){
+    public boolean alreadyExists(String userName) {
         if (isEmpty()) {
             return false;
         }
-            
+    
         NodeUser cur = root;
-        while (cur.getNext() != null){
-            if(cur.getName().equals(userName)){
+        while (cur.getNext() != null) {
+            if (cur.getName() != null && cur.getName().equals(userName)) {
                 return true;
             }
             cur = cur.getNext();
-        } 
-        return false;     
+        }
+    
+        return false;
     }
 
     // remove determinado usuário
@@ -84,11 +85,25 @@ public class ListUsers {
     }
 
     // verifica se um usuário com o nome especificado está na lista
-    public boolean contains(String userName) {
+    public boolean contains(String name) {
         NodeUser cur = root;
 
         while (cur != null) {
-            if (cur.getName().equals(userName)) {
+            if (cur.getServer().equals(name)) {
+                return true;
+            }
+            cur = cur.getNext();
+        }
+
+        return false;
+    }
+
+    // verifica se um usuário com o servidor e porta especificado está na lista
+    public boolean contains(String server, int port) {
+        NodeUser cur = root;
+
+        while (cur != null) {
+            if (cur.getServer().equals(server) && cur.getPort() == port) {
                 return true;
             }
             cur = cur.getNext();

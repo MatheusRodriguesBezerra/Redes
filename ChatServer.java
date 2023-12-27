@@ -10,7 +10,7 @@ public class ChatServer{
 
     static private final Charset charset = Charset.forName("UTF8");
     static private final CharsetDecoder decoder = charset.newDecoder();
-
+    private static final Data data = new Data();
 
     static public void main( String args[] ) throws Exception {
         int port = Integer.parseInt( args[0] );
@@ -59,6 +59,7 @@ public class ChatServer{
 
                             sc = (SocketChannel)key.channel();
                             boolean ok = processInput( sc );
+                            
 
                             if (!ok) {
                                 key.cancel();
@@ -67,6 +68,7 @@ public class ChatServer{
                                 try {
                                     s = sc.socket();
                                     System.out.println( "Closing connection to "+s );
+
                                     s.close();
                                 } catch( IOException ie ) {
                                     System.err.println( "Error closing socket "+s+": "+ie );
@@ -100,12 +102,18 @@ public class ChatServer{
         sc.read( buffer );
         buffer.flip();
 
+        String clientAddress = sc.socket().getInetAddress().getHostAddress();
+        int clientPort = sc.socket().getPort();
+        System.out.println(clientAddress);
+        System.out.println(clientPort);
+
         if (buffer.limit()==0) {
             return false;
         }
 
         String message = decoder.decode(buffer).toString();
-        System.out.print( message );
+        data.event(message, clientAddress, clientPort);
+        // System.out.println(data.event(message, clientAddress, clientPort));
 
         return true;
     }
